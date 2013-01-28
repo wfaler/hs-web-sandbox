@@ -5,7 +5,8 @@ import Network.Wai.Handler.Warp (run)
 import Data.ByteString.Lazy as LBS
 import Data.ByteString as BS
 import Data.ByteString.Char8 as CS
-import Control.Monad.IO.Class (liftIO)
+import Data.Text.Encoding as ENC
+import Data.Maybe
 
 app :: Application
 app req = do
@@ -19,7 +20,13 @@ app req = do
 --	queryParams <- queryString req
 
 mapAppRequest :: RequestHeaders -> Query -> LBS.ByteString
-mapAppRequest headers queryParams = (strictsToLazyBs $ (fmap (CS.pack . show) headers) ++ (fmap (CS.pack . show) queryParams) ++ [(CS.pack "fåö")])
+mapAppRequest headers queryParams = (strictsToLazyBs $ (fmap (CS.pack . show) headers) ++ (fmap mapQueryParam queryParams) ++ [(CS.pack "fåö")])
+
+mapQueryParam :: QueryItem -> BS.ByteString
+mapQueryParam (name, value) = name `BS.append` (CS.pack "=") `BS.append` (fromMaybe (CS.pack "") value)
+
+encodeP :: BS.ByteString -> BS.ByteString
+encodeP p = ENC.encodeUtf8 $ ENC.decodeUtf8 p
 
 strictToLazyBs :: BS.ByteString -> LBS.ByteString
 strictToLazyBs bs = LBS.fromChunks [bs]
